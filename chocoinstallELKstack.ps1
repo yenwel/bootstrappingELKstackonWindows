@@ -26,6 +26,26 @@ else
     choco install jdk8 -y
     Write-Output "Java Development Kit 8 was installed, you need to set JAVA_HOME variable"
 }
+
 choco install elasticsearch -y -Force
 choco install logstash -y -Force
 choco install kibana -y -Force
+
+$installdirElastic = Get-Command elasticsearch | Select-Object -ExpandProperty Definition
+$serviceElastic = $installdirElastic -replace "elasticsearch.bat$", "service"
+Invoke-Expression -command “$serviceElastic install”
+
+$kibanaserviceToStart = Get-Service | Where-Object {$_.name -match "kibana" -and $_.Status -ne "Running"} | Select-Object -first 1
+$elasticserviceToStart = Get-Service | Where-Object {$_.name -match "elasticsearch" -and $_.Status -ne "Running"}| Select-Object -first 1
+
+if(![string]::IsNullOrEmpty($kibanaserviceToStart))
+{
+    Start-Service $kibanaserviceToStart.'name'
+}
+if(![string]::IsNullOrEmpty($elasticserviceToStart))
+{
+    Start-Service $elasticserviceToStart.'name'
+}
+
+explorer http://localhost:9200
+explorer http://localhost:5601
